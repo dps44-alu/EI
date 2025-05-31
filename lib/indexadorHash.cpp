@@ -9,7 +9,8 @@
 #include <cstdlib>      
 #include <algorithm>
 #include <stdexcept>   
-#include <cctype>      
+#include <cctype>   
+#include <filesystem>   
 
 using namespace std;
 
@@ -26,6 +27,19 @@ IndexadorHash::IndexadorHash(const string& fichStopWords, const string& delimita
     ofstream dummyFile("./corpus_corto/dummy.tk");
     dummyFile.close();
  
+    if (dirIndice.empty()) {
+    try {
+        string cwd = filesystem::current_path().string();
+        directorioIndice = cwd;
+    } catch (const filesystem::filesystem_error& e) {
+        cerr << "AVISO: No se pudo obtener el directorio actual: " << e.what() << ". Usando '.'." << endl;
+        directorioIndice = ".";
+    }
+    } else {
+        directorioIndice = dirIndice;
+    }
+
+    /*
     if(dirIndice.empty()) {
         char* cwd = get_current_dir_name();
         if (cwd) {
@@ -38,6 +52,7 @@ IndexadorHash::IndexadorHash(const string& fichStopWords, const string& delimita
     } else {
         directorioIndice = dirIndice;
     }
+    */
 
     this->ficheroStopWords = fichStopWords;
     ifstream fStopWords(fichStopWords);
@@ -850,4 +865,46 @@ ostream& operator<<(ostream& s, const IndexadorHash& p) {
     s << "Informacion de la coleccion indexada: " << p.informacionColeccionDocs << endl;
     s << "Se almacenaran las posiciones de los terminos: " << p.almacenarPosTerm;  
     return s;
+}
+
+
+bool IndexadorHash::getDocById(const long int &id, string &nombre, InfDoc &informacionDoc) const
+{
+    bool res = false;
+    unordered_map<string, InfDoc>::const_iterator it;
+
+    for (it = indiceDocs.begin(); it != indiceDocs.end() && !res; it++)
+    {
+        if (it->second.idDoc ==  id)
+        {
+            res = true;
+            nombre = it->first;
+            informacionDoc = it->second;
+        }
+    }
+    return res;
+}
+
+void IndexadorHash::setStopWords(const string &nombreFichero){
+    ifstream input;
+    ficheroStopWords = nombreFichero;
+    input.open(nombreFichero.c_str());
+    if (!input)
+    {
+        cerr << "Error, no existe el fichero " << nombreFichero <<  endl;
+    }
+    else
+    {
+        //cout << "Cargado fichero de StopWords" << endl;
+        stopWords.clear();
+        string palabra;
+
+        while(!input.eof()){
+            getline(input, palabra);
+            if (palabra.size() > 0){
+                stopWords.insert(palabra);
+            }
+        }
+    }
+    input.close();
 }

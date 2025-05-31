@@ -83,6 +83,14 @@ public:
     void ListarDocs() const;
     bool ListarDocs(const std::string& nomDoc) const;
 
+
+    //A partir de un ID de documento, obtiene el nombre del fichero y el objeto infdoc
+    //Si la funcion retorna false, indica que el id no esta en la coleccion
+    bool getDocById(const long int &, string &, InfDoc &) const;
+
+    void setStopWords(const string &nombreFichero);
+
+    
 private:
     // Miembros privados
     std::string directorioIndice;
@@ -105,7 +113,6 @@ private:
 
     // Método auxiliar privado y const
     void procesarPalabra(std::string& palabra) const;
-
 };
 
 #endif /* INDEXADORHASH_H_ */

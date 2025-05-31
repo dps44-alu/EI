@@ -868,6 +868,35 @@ ostream& operator<<(ostream& s, const IndexadorHash& p) {
 }
 
 
+
+
+
+std::unordered_map<std::string, InformacionTerminoPregunta> IndexadorHash::getIndicePregunta() const
+{
+    return indicePregunta;
+}
+
+std::unordered_map<std::string, InfDoc> IndexadorHash::getIndiceDocs () const
+{
+    return indiceDocs;
+}
+
+InformacionPregunta IndexadorHash::getInfPregunta () const
+{
+    return infPregunta;
+}
+
+std::unordered_map<std::string, InformacionTermino> IndexadorHash::getIndice () const
+{
+    return indice;
+}
+
+InfColeccionDocs IndexadorHash::getInformacionColeccionDocs () const
+{
+    return informacionColeccionDocs;
+}
+
+
 bool IndexadorHash::getDocById(const long int &id, string &nombre, InfDoc &informacionDoc) const
 {
     bool res = false;

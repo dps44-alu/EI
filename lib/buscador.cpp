@@ -1,4 +1,4 @@
-#include "../include/buscador.h"
+#include "../include/buscador.h"   
 
 void Buscador::Copia (const Buscador& buscador)
 {
@@ -8,7 +8,7 @@ void Buscador::Copia (const Buscador& buscador)
     b = 0.75;
 }
 
-string Buscador::generarResultados(const int& numDocumentos) const
+string Buscador::generarResultados (const int& numDocumentos) const
 {
     string resultado;
     priority_queue<ResultadoRI> dO = docsOrdenados;
@@ -64,13 +64,13 @@ string Buscador::generarResultados(const int& numDocumentos) const
 }
 
 /** Retorna un indice de similitus entre la query indexada y el documento pasado*/
-double Buscador::sim(const InfDoc& Doc)
+double Buscador::sim (const InfDoc& Doc)
 {
     double res = 0;
     unordered_map<string, InformacionTerminoPregunta>::const_iterator it;
 
     //Recorro todos los terminos de la pregunta
-    for (it = indicePregunta.begin(); it != indicePregunta.end(); it++)
+    for (it = getIndicePregunta().begin(); it != getIndicePregunta().end(); it++)
     {
         //Obtengo el string del termino
         string strtermino = "";
@@ -84,6 +84,113 @@ double Buscador::sim(const InfDoc& Doc)
         }
     }
     return res;
+}
+
+/** Retorna el peso que tiene un termino en la query indexada*/
+double Buscador::pesoTerminoQuery (const InformacionTerminoPregunta& termino)
+{
+    long int k = getInfPregunta().getNumTotalPal();
+
+    if (k == 0) 
+    {
+        return 0;
+    }
+
+    double res = 0;
+    res = 1.0 * termino.ft / k;
+
+    return res;
+}
+
+/** Retorna el peso de un termino en el documento pasado por parametro*/
+double Buscador::pesoTerminoDocumento (const InformacionTermino& termino, const InfDoc& Doc)
+{
+    double res = 0;
+    double lambat = lambda(termino);
+    
+    res = log2(1 + lambat);
+    res += fPrimaTerminoDocumento(termino, Doc) * log2((1+ lambat) / lambat);
+    res = res * (termino.ftc +1) / termino.l_docs.size() * (fPrimaTerminoDocumento(termino, Doc) * log2((1 + lambat) / lambat) + 1);
+    
+    return res;
+}
+
+double Buscador::lambda (const InformacionTermino& termino)
+{
+    long int ft = termino.getFtc();
+
+    int N = getIndiceDocs().size();
+    if (N == 0) return 0;
+
+    else {
+        return (1.0 * ft/N);
+    }
+}
+
+double Buscador::fPrimaTerminoDocumento (const InformacionTermino& termino, const InfDoc& Doc) const
+{
+    InfTermDoc infter;
+    if (!termino.IndexedAtDocument(Doc.getIdDoc(), infter)) return 0;
+    double res = infter.posTerm.size() * log2(1 + (c * (getInformacionColeccionDocs().getTamBytes() / getInformacionColeccionDocs().numDocs) / Doc.getTamBytes()));
+    return res;
+}
+
+/** Funciones utilizadas en el modelo BM25*/
+double Buscador::score(const InfDoc& Doc, double& avgdl)
+{
+    double salida = 0;
+
+    unordered_map<string, InformacionTerminoPregunta>::const_iterator it;
+    for (it = getIndicePregunta().begin(); it!= getIndicePregunta().end(); it++)
+    {
+        double fqiD = 0;
+        //Localizo el termino en el indice
+        unordered_map<string, InformacionTermino>::const_iterator ittermino;
+        ittermino = getIndice().find((*it).first);
+        if (ittermino != getIndice().end())
+        {
+            //Obtengo la informacion del Termino/Documento
+            InfTermDoc itd;
+            if (ittermino->second.IndexedAtDocument(Doc.getIdDoc(), itd))
+            {
+                //Obtengo la frecuencia del termino en el documento
+                fqiD = itd.ft;
+            }
+        }
+
+        //Solo si fqid es distinto de 0 tiene sentido continuar
+        if (fqiD != 0)
+        {
+            double salidaTermporal = 0;
+            salidaTermporal = 1.0 * fqiD * (k1 +1);
+            salidaTermporal = 1.0 * salidaTermporal / (fqiD + k1 * (1 - b + b * (Doc.getNumPalSinParada() / avgdl)  ));
+
+            if (salidaTermporal != 0)
+            {
+                double idf = IDF((*it).first);
+                salidaTermporal = salidaTermporal * idf;
+                salida += salidaTermporal;
+            }
+        }
+    }
+    return salida;
+}
+
+double Buscador::IDF (const string& termino)
+{
+    double salida = 0;
+    //Obtengo (nqi) numero de documentos en los que aparece el termino
+    long int nqi = 0;
+    unordered_map<string, InformacionTermino>::const_iterator it;
+    it = getIndice().find(termino);
+    if (it != getIndice().end())
+    {
+        nqi = (*it).second.l_docs.size();
+    }
+    salida = getIndiceDocs().size() - nqi + 0.5;
+    salida = 1.0 * salida / (nqi+0.5);
+    salida = log(salida);
+    return salida;
 }
 
 
@@ -109,10 +216,11 @@ Buscador::~Buscador()
 Buscador& Buscador::operator= (const Buscador& buscador)
 {
     Copia(buscador);
+    return *this;
 }
 
 
-bool Buscador::Buscar(const int& numDocumentos = 99999)
+bool Buscador::Buscar(const int& numDocumentos)
 {
     //Vacio los resultados anteriores
     while (!docsOrdenados.empty())
@@ -125,7 +233,7 @@ bool Buscador::Buscar(const int& numDocumentos = 99999)
         //Formula DFR
         //Añado a la lista la similitud para cada documento de la coleccion
         unordered_map<string, InfDoc>::const_iterator it;
-        for (it = indiceDocs.begin(); it != indiceDocs.end(); it++)
+        for (it = getIndiceDocs().begin(); it != getIndiceDocs().end(); it++)
         {
             docsOrdenados.push(ResultadoRI(sim(it->second), (*it).second.idDoc, 1));
         }
@@ -136,15 +244,15 @@ bool Buscador::Buscar(const int& numDocumentos = 99999)
         //que es la media del numero de palabras de la coleccion
         double avgdl = 0;
         unordered_map<string, InfDoc>::const_iterator itd;
-        for (itd = indiceDocs.begin(); itd != indiceDocs.end(); itd++)
+        for (itd = getIndiceDocs().begin(); itd != getIndiceDocs().end(); itd++)
         {
-            avgdl += (*itd).second.getTotalPalSinParada();
+            avgdl += (*itd).second.getNumPalSinParada();
         }
-        avgdl = 1.0 * avgdl / indiceDocs.size();
+        avgdl = 1.0 * avgdl / getIndiceDocs().size();
 
         //Formula BM25
         unordered_map<string, InfDoc>::const_iterator it;
-        for (it = indiceDocs.begin(); it != indiceDocs.end(); it++)
+        for (it = getIndiceDocs().begin(); it != getIndiceDocs().end(); it++)
         {
             docsOrdenados.push(ResultadoRI(score(it->second, avgdl), it->second.idDoc, 0));
         }
@@ -166,10 +274,10 @@ bool Buscador::Buscar(const string& dirPreguntas, const int& numDocumentos, cons
     if (formSimilitud == 1)
     {
         unordered_map<string, InfDoc>::const_iterator itd;
-        for (itd = indiceDocs.begin(); itd != indiceDocs.end(); itd++){
-            avgdl += itd->second.getTotalPalSinParada();
+        for (itd = getIndiceDocs().begin(); itd != getIndiceDocs().end(); itd++){
+            avgdl += itd->second.getNumPalSinParada();
         }
-        avgdl = 1.0 * avgdl / indiceDocs.size();
+        avgdl = 1.0 * avgdl / getIndiceDocs().size();
     }
 
     for (int actual = numPregInicio; actual < numPregFin || actual == numPregFin; actual++)
@@ -198,7 +306,7 @@ bool Buscador::Buscar(const string& dirPreguntas, const int& numDocumentos, cons
             if (formSimilitud == 0){
                 //Añado a la lista la similitud para cada documento de la coleccion
                 unordered_map<string, InfDoc>::const_iterator it;
-                for (it = indiceDocs.begin(); it != indiceDocs.end(); it++)
+                for (it = getIndiceDocs().begin(); it != getIndiceDocs().end(); it++)
                 {
                     temporal.push(ResultadoRI(sim(it->second), it->second.idDoc, actual));
                 }
@@ -207,7 +315,7 @@ bool Buscador::Buscar(const string& dirPreguntas, const int& numDocumentos, cons
             {
                 //Formula BM25
                 unordered_map<string, InfDoc>::const_iterator it;
-                for (it = indiceDocs.begin(); it != indiceDocs.end(); it++)
+                for (it = getIndiceDocs().begin(); it != getIndiceDocs().end(); it++)
                 {
                     temporal.push(ResultadoRI(score(it->second, avgdl), it->second.idDoc, actual));
                 }
@@ -226,7 +334,7 @@ bool Buscador::Buscar(const string& dirPreguntas, const int& numDocumentos, cons
     return true;
 }
 
-void Buscador::ImprimirResultadoBusqueda(const int& numDocumentos = 99999) const
+void Buscador::ImprimirResultadoBusqueda(const int& numDocumentos) const
 {
     cout << generarResultados(numDocumentos);
 }

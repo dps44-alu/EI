@@ -24,7 +24,7 @@ int ResultadoRI::NumPregunta() const
 
 bool ResultadoRI::operator< (const ResultadoRI& lhs) const
 {
-    if(numPregunta == lhs.numPregunta)  return (vSimilitud < lhs.vSimilitud);
+    if (numPregunta == lhs.numPregunta) return (vSimilitud < lhs.vSimilitud);
     else                                return (numPregunta > lhs.numPregunta);
 }
 

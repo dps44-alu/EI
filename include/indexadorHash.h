@@ -90,7 +90,13 @@ public:
 
     void setStopWords(const string &nombreFichero);
 
-    
+    std::unordered_map<std::string, InformacionTerminoPregunta> getIndicePregunta () const;
+    std::unordered_map<std::string, InfDoc> getIndiceDocs () const;
+    InformacionPregunta getInfPregunta () const;
+    std::unordered_map<std::string, InformacionTermino> getIndice () const;
+    InfColeccionDocs getInformacionColeccionDocs () const;
+
+
 private:
     // Miembros privados
     std::string directorioIndice;
@@ -115,4 +121,4 @@ private:
     void procesarPalabra(std::string& palabra) const;
 };
 
-#endif /* INDEXADORHASH_H_ */
+#endif

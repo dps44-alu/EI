@@ -5,6 +5,7 @@
 #include "ResultadoRI.h"
 
 #include <queue>
+#include <cmath>
 
 class Buscador: public IndexadorHash {
 
@@ -91,9 +92,21 @@ private:
 
     void Copia(const Buscador&);
 
-    string generarResultados(const int& numDocumentos) const;
+    string generarResultados (const int&) const;
 
-    double sim(const InfDoc&);
+    double sim (const InfDoc&);
+
+    double pesoTerminoQuery (const InformacionTerminoPregunta&);
+
+    double pesoTerminoDocumento (const InformacionTermino&, const InfDoc&);
+
+    double lambda (const InformacionTermino&);
+
+    double fPrimaTerminoDocumento (const InformacionTermino&, const InfDoc&) const;
+
+    double score (const InfDoc&, double&);
+
+    double IDF (const string&);
 };
 
 #endif

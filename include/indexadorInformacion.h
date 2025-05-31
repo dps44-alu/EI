@@ -34,6 +34,8 @@ public:
     int numTotalPal;
     int numTotalPalSinParada;
     int numTotalPalDiferentes;
+
+    int getNumTotalPal () const { return numTotalPal; }
 };
 
 // --- Clase InformacionTerminoPregunta ---
@@ -67,6 +69,8 @@ public:
     long int numTotalPalSinParada;
     long int numTotalPalDiferentes;
     long int tamBytes;
+
+    long int getTamBytes () const { return tamBytes; }
 };
 
 // --- Clase InfTermDoc ---
@@ -101,6 +105,10 @@ public:
     int numPalDiferentes;
     long int tamBytes;
     Fecha fechaModificacion;
+
+    int getNumPalSinParada () const { return numPalSinParada; };
+    int getIdDoc () const { return idDoc; }
+    long int getTamBytes () const { return tamBytes; }
 };
 
 // --- Clase InformacionTermino ---
@@ -116,6 +124,22 @@ public:
 // Miembros públicos según PDF
     int ftc;
     std::unordered_map<long int, InfTermDoc> l_docs; // Usar std::unordered_map
+
+    int getFtc () const { return ftc; }
+    bool IndexedAtDocument (const int& d, InfTermDoc& infdoc) const
+    {
+        bool res = false;
+        std::unordered_map<long int, InfTermDoc>::const_iterator it1;
+        it1 = l_docs.find(d);
+
+        if (it1 != l_docs.end())
+        {
+            res = true;
+            infdoc = (*it1).second;
+        }
+
+        return res;
+    }
 };
 
 #endif /* INDEXADORINFORMACION_H_ */

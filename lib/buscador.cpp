@@ -276,7 +276,7 @@ bool Buscador::Buscar(const int& numDocumentos)
         double avgdl = 0;
         for (const auto& [_, infDoc] : getIndiceDocs()) 
         {
-            avgdl += infDoc.getNumPalSinParada();
+            avgdl += infDoc.getNumPal();
         }
         avgdl = 1.0 * avgdl / getIndiceDocs().size();
 

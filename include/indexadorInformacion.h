@@ -141,7 +141,7 @@ public:
         if (it1 != l_docs.end())
         {
             res = true;
-            infdoc = (*it1).second;
+            infdoc = it1->second;
         }
 
         return res;

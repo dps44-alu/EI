@@ -70,6 +70,8 @@ public:
     long int numTotalPalDiferentes;
     long int tamBytes;
 
+    long int getNumDocs () const { return numDocs; }
+    long int getNumTotalPal () const { return numTotalPal; }
     long int getTamBytes () const { return tamBytes; }
 };
 
@@ -106,6 +108,7 @@ public:
     long int tamBytes;
     Fecha fechaModificacion;
 
+    int getNumPal () const { return numPal; }
     int getNumPalSinParada () const { return numPalSinParada; };
     int getIdDoc () const { return idDoc; }
     long int getTamBytes () const { return tamBytes; }
@@ -126,6 +129,9 @@ public:
     std::unordered_map<long int, InfTermDoc> l_docs; // Usar std::unordered_map
 
     int getFtc () const { return ftc; }
+
+    // Retorna True si el termino esta indexado en el documento con id pasado
+    // En caso afirmativo, se utiliza el infdoc por parametro para retornar la referencia al objeto InformacionTerminoDocumento
     bool IndexedAtDocument (const int& d, InfTermDoc& infdoc) const
     {
         bool res = false;

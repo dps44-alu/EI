@@ -26,20 +26,7 @@ IndexadorHash::IndexadorHash(const string& fichStopWords, const string& delimita
 {
     ofstream dummyFile("./corpus_corto/dummy.tk");
     dummyFile.close();
- 
-    if (dirIndice.empty()) {
-    try {
-        string cwd = filesystem::current_path().string();
-        directorioIndice = cwd;
-    } catch (const filesystem::filesystem_error& e) {
-        cerr << "AVISO: No se pudo obtener el directorio actual: " << e.what() << ". Usando '.'." << endl;
-        directorioIndice = ".";
-    }
-    } else {
-        directorioIndice = dirIndice;
-    }
 
-    /*
     if(dirIndice.empty()) {
         char* cwd = get_current_dir_name();
         if (cwd) {
@@ -52,7 +39,7 @@ IndexadorHash::IndexadorHash(const string& fichStopWords, const string& delimita
     } else {
         directorioIndice = dirIndice;
     }
-    */
+    
 
     this->ficheroStopWords = fichStopWords;
     ifstream fStopWords(fichStopWords);
@@ -936,4 +923,9 @@ void IndexadorHash::setStopWords(const string &nombreFichero){
         }
     }
     input.close();
+}
+
+string IndexadorHash::getPregunta () const
+{
+    return pregunta;
 }

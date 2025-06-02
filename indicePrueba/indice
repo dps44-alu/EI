@@ -1,0 +1,416 @@
+[CONFIG]
+ficheroStopWords=./StopWordsEspanyol.txt
+delimitadores=. ,:
+detectComp=0
+minuscSinAcentos=0
+tipoStemmer=0
+almacenarPosTerm=0
+[END_CONFIG]
+[STOPWORDS_MAP]
+342
+ya	ya
+y	y
+vuestros	vuestros
+vosotros	vosotros
+vosotras	vosotras
+verdadera	verdadera
+van	van
+vamos	vamos
+valor	valor
+vais	vais
+ustedes	ustedes
+usted	usted
+usar	usar
+usan	usan
+usamos	usamos
+uno	uno
+tuya	tuya
+tu	tu
+trabajas	trabajas
+trabajan	trabajan
+trabajais	trabajais
+trabaja	trabaja
+tomar	tomar
+todos	todos
+todo	todo
+todas	todas
+tiene	tiene
+tengo	tengo
+tenemos	tenemos
+teneis	teneis
+te	te
+tantos	tantos
+tanta	tanta
+tan	tan
+va	va
+tampoco	tampoco
+también	también
+tales	tales
+tal	tal
+suyo	suyo
+tantas	tantas
+suya	suya
+sus	sus
+su	su
+sra	sra
+sr	sr
+somos	somos
+fueron	fueron
+estos	estos
+con	con
+nosotros	nosotros
+estan	estan
+jamás	jamás
+eso	eso
+consigue	consigue
+esa	esa
+bajo	bajo
+poco	poco
+el	el
+demás	demás
+vuestro	vuestro
+donde	donde
+lo	lo
+desde	desde
+cuales	cuales
+quiza	quiza
+demasiado	demasiado
+emplean	emplean
+demasiadas	demasiadas
+sta	sta
+del	del
+alli	alli
+estais	estais
+dejar	dejar
+cuántos	cuántos
+estar	estar
+consiguen	consiguen
+cuanto	cuanto
+cuántas	cuántas
+conseguimos	conseguimos
+etc	etc
+trabajamos	trabajamos
+encima	encima
+siempre	siempre
+cuánta	cuánta
+bastante	bastante
+emplear	emplear
+bien	bien
+estado	estado
+hasta	hasta
+la	la
+qué	qué
+ti	ti
+cuando	cuando
+eran	eran
+casi	casi
+podeis	podeis
+estoy	estoy
+empleas	empleas
+usa	usa
+suyos	suyos
+fin	fin
+dentro	dentro
+tras	tras
+empleais	empleais
+cuán	cuán
+ciertos	ciertos
+cualquieras	cualquieras
+aqui	aqui
+aquellos	aquellos
+eras	eras
+ellas	ellas
+pocos	pocos
+ciertas	ciertas
+contra	contra
+él	él
+fuimos	fuimos
+un	un
+me	me
+es	es
+mias	mias
+atras	atras
+ante	ante
+cómo	cómo
+tanto	tanto
+cuantos	cuantos
+ahí	ahí
+yo	yo
+cuantas	cuantas
+alguna	alguna
+solo	solo
+trabajo	trabajo
+suyas	suyas
+aquí	aquí
+aquella	aquella
+entonces	entonces
+quienes	quienes
+eramos	eramos
+dos	dos
+demasiada	demasiada
+arriba	arriba
+conseguir	conseguir
+fue	fue
+esas	esas
+estas	estas
+mucho	mucho
+algo	algo
+fui	fui
+alguno	alguno
+muchísimo	muchísimo
+consigo	consigo
+vuestras	vuestras
+mia	mia
+mío	mío
+eres	eres
+ir	ir
+verdad	verdad
+algunos	algunos
+allá	allá
+cualquier	cualquier
+algún	algún
+cualquiera	cualquiera
+cabe	cabe
+parecer	parecer
+a	a
+sres	sres
+sabeis	sabeis
+antes	antes
+esos	esos
+hacemos	hacemos
+ese	ese
+cierto	cierto
+conmigo	conmigo
+otro	otro
+cuan	cuan
+tuyos	tuyos
+ajeno	ajeno
+ninguna	ninguna
+aquello	aquello
+pueden	pueden
+aquel	aquel
+hacer	hacer
+querer	querer
+en	en
+ni	ni
+algunas	algunas
+allí	allí
+como	como
+quién	quién
+cuánto	cuánto
+entre	entre
+otros	otros
+otra	otra
+asi	asi
+usas	usas
+acá	acá
+uso	uso
+estaba	estaba
+que	que
+sí	sí
+vaya	vaya
+aun	aun
+hacia	hacia
+sín	sín
+ello	ello
+ambos	ambos
+aunque	aunque
+sino	sino
+aquellas	aquellas
+varias	varias
+podrias	podrias
+intentais	intentais
+quienesquiera	quienesquiera
+trabajar	trabajar
+demasiados	demasiados
+unos	unos
+intentamos	intentamos
+más	más
+ultimo	ultimo
+demas	demas
+cierta	cierta
+este	este
+mis	mis
+saben	saben
+contigo	contigo
+intento	intento
+nuestros	nuestros
+ha	ha
+hace	hace
+haceis	haceis
+hacen	hacen
+haces	haces
+varios	varios
+ningun	ningun
+segun	segun
+hago	hago
+incluso	incluso
+intenta	intenta
+intentan	intentan
+intentar	intentar
+unas	unas
+cada	cada
+intentas	intentas
+junto	junto
+ajenas	ajenas
+juntos	juntos
+largo	largo
+poca	poca
+las	las
+los	los
+ampleamos	ampleamos
+mas	mas
+tus	tus
+menos	menos
+tú	tú
+cual	cual
+mía	mía
+usais	usais
+nuestras	nuestras
+mio	mio
+mismos	mismos
+mientras	mientras
+mios	mios
+vuestra	vuestra
+modo	modo
+era	era
+pues	pues
+de	de
+misma	misma
+ajenos	ajenos
+mismas	mismas
+ella	ella
+mi	mi
+mismo	mismo
+quizas	quizas
+ellos	ellos
+sabemos	sabemos
+mucha	mucha
+muchas	muchas
+otras	otras
+muchísima	muchísima
+puede	puede
+muchísimas	muchísimas
+muchísimos	muchísimos
+empleo	empleo
+muy	muy
+ajena	ajena
+nada	nada
+ningunas	ningunas
+tener	tener
+ninguno	ninguno
+ningunos	ningunos
+os	os
+tiempo	tiempo
+sabes	sabes
+no	no
+nos	nos
+toda	toda
+nosotras	nosotras
+por	por
+nuestra	nuestra
+esto	esto
+nuestro	nuestro
+si	si
+cuanta	cuanta
+nunca	nunca
+tambien	tambien
+para	para
+muchos	muchos
+so	so
+pero	pero
+pocas	pocas
+al	al
+podemos	podemos
+poder	poder
+podria	podria
+una	una
+podriais	podriais
+podriamos	podriamos
+podrian	podrian
+porque	porque
+primero	primero
+voy	voy
+soy	soy
+estamos	estamos
+puedo	puedo
+quien	quien
+tuyo	tuyo
+quienquiera	quienquiera
+sabe	sabe
+esta	esta
+saber	saber
+tienen	tienen
+se	se
+ser	ser
+siendo	siendo
+sin	sin
+sobre	sobre
+consigues	consigues
+gueno	gueno
+sois	sois
+solamente	solamente
+[END_STOPWORDS_MAP]
+[INF_COLECCION]
+2
+11
+7
+4
+53
+[END_INF_COLECCION]
+[INDICE_DOCS]
+2
+corpus_corto/fichero2.txt
+2
+5
+3
+2
+23
+14 5 116 17 50 5
+corpus_corto/fichero1.txt
+1
+6
+4
+3
+30
+14 5 116 17 50 5
+[END_INDICE_DOCS]
+[INDICE_TERMINOS]
+4
+pal3
+1
+1
+1
+1
+0
+pal2
+3
+2
+2
+2
+0
+1
+1
+0
+pal4
+1
+1
+2
+1
+0
+pal1
+2
+1
+1
+2
+0
+[END_INDICE_TERMINOS]
+[PREGUNTA]
+
+0
+0
+0
+[END_PREGUNTA]
+[INDICE_PREGUNTA]
+0
+[END_INDICE_PREGUNTA]

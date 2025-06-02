@@ -1,34 +1,87 @@
 #include "../include/buscador.h"   
 
+//////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////
+//
+//  RESULTADORI
+//
+//////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////
+//////////////////////// CONSTRUCTORES ///////////////////////
+ResultadoRI::ResultadoRI (const double& kvSimilitud, const long int& kidDoc, const int& np)
+{
+    vSimilitud = kvSimilitud;
+    idDoc = kidDoc;
+    numPregunta = np;
+}
+
+
+///////////////////////// OPERADORES /////////////////////////
+bool ResultadoRI::operator< (const ResultadoRI& lhs) const
+{
+    if (numPregunta == lhs.numPregunta) return (vSimilitud < lhs.vSimilitud);
+    else                                return (numPregunta > lhs.numPregunta);
+}
+
+
+///////////////////// FUNCIONES PÚBLICAS /////////////////////
+double ResultadoRI::VSimilitud () const
+{
+    return vSimilitud;
+}
+
+long int ResultadoRI::IdDoc () const
+{
+    return idDoc;
+}
+
+int ResultadoRI::NumPregunta () const
+{
+    return numPregunta;
+}
+
+////////////////////// FUNCIONES AMIGAS //////////////////////
+ostream& operator<< (ostream &os, const ResultadoRI &res)
+{
+    os << res.vSimilitud << "\t\t" << res.idDoc << "\t" << res.numPregunta << endl;
+    return os;
+}
+
+
+
+//////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////
+//
+//  BUSCADOR
+//
+//////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////
+///////////////////// FUNCIONES PRIVADAS /////////////////////
 void Buscador::Copia (const Buscador& buscador)
 {
     formSimilitud = buscador.formSimilitud;
     c = 2;
     k1 = 1.2;
     b = 0.75;
+    //setStopWords("StopWordsEspanyol.txt");
 }
 
 string Buscador::generarResultados (const int& numDocumentos) const
 {
     string resultado;
-    priority_queue<ResultadoRI> dO = docsOrdenados;
+    priority_queue<ResultadoRI> docs = docsOrdenados;
 
-    for (int i = 0; i < numDocumentos && !dO.empty(); i++)
+    for (int i = 0; i < numDocumentos && !docs.empty(); i++)
     {
-        string salida;
-        if (formSimilitud==0)
-        {
-            salida = "DFR ";
-        }
-        else
-        {
-            salida = "BM25 ";
-        } 
+        string salida = to_string(docs.top().NumPregunta()) + " ";
+
+        if      (formSimilitud == 0)    salida += "DFR ";
+        else                            salida += "BM25 ";
 
         //Obtengo el nombre del fichero a partir del id de documento
         string nombreFichero;
         InfDoc inf;
-        getDocById(dO.top().IdDoc(), nombreFichero, inf);
+        getDocById(docs.top().IdDoc(), nombreFichero, inf);
 
         //Al nombre de fichero le quito la ruta de la carpeta
         int ultimaBarra = -1;
@@ -52,12 +105,12 @@ string Buscador::generarResultados (const int& numDocumentos) const
         salida += nombreFichero + " ";
 
         ostringstream conv;
-        conv << i << " " << dO.top().VSimilitud() << " " << dO.top().NumPregunta() << " ConjuntoDePreguntas";
+        conv << i << " " << docs.top().VSimilitud() << " " << getPregunta();
 
         salida += conv.str();
         resultado += salida + '\n';
 
-        dO.pop();
+        docs.pop();
     }
 
     return resultado;
@@ -67,133 +120,108 @@ string Buscador::generarResultados (const int& numDocumentos) const
 double Buscador::sim (const InfDoc& Doc)
 {
     double res = 0;
-    unordered_map<string, InformacionTerminoPregunta>::const_iterator it;
 
-    //Recorro todos los terminos de la pregunta
-    for (it = getIndicePregunta().begin(); it != getIndicePregunta().end(); it++)
+    for (const auto& [str, infPreg] : getIndicePregunta())
     {
-        //Obtengo el string del termino
-        string strtermino = "";
-        strtermino = it->first;
-
-        //Localizo el termino en la indeacion
-        InformacionTermino termino;
-        if (Devuelve(strtermino, termino))
+        InformacionTermino infTerm;
+        if (Devuelve(str, infTerm))
         {
-            res += pesoTerminoQuery(it->second) * pesoTerminoDocumento(termino, Doc);
+            res += wt_q(infPreg) * wt_d(infTerm, Doc);
         }
     }
-    return res;
-}
-
-/** Retorna el peso que tiene un termino en la query indexada*/
-double Buscador::pesoTerminoQuery (const InformacionTerminoPregunta& termino)
-{
-    long int k = getInfPregunta().getNumTotalPal();
-
-    if (k == 0) 
-    {
-        return 0;
-    }
-
-    double res = 0;
-    res = 1.0 * termino.ft / k;
 
     return res;
 }
 
-/** Retorna el peso de un termino en el documento pasado por parametro*/
-double Buscador::pesoTerminoDocumento (const InformacionTermino& termino, const InfDoc& Doc)
+// w_t,q : Devuelve el peso que tiene un termino en la query indexada
+double Buscador::wt_q (const InformacionTerminoPregunta& termino)
 {
-    double res = 0;
-    double lambat = lambda(termino);
-    
-    res = log2(1 + lambat);
-    res += fPrimaTerminoDocumento(termino, Doc) * log2((1+ lambat) / lambat);
-    res = res * (termino.ftc +1) / termino.l_docs.size() * (fPrimaTerminoDocumento(termino, Doc) * log2((1 + lambat) / lambat) + 1);
-    
-    return res;
+    double k = getInfPregunta().getNumTotalPal();
+
+    if (k == 0) return 0;
+
+    return 1.0 * termino.ft / k;
 }
 
-double Buscador::lambda (const InformacionTermino& termino)
+// w_t,d : Devuelve el peso de un termino en el documento pasado por parametro
+double Buscador::wt_d (const InformacionTermino& termino, const InfDoc& Doc)
 {
-    long int ft = termino.getFtc();
+    if (termino.l_docs.size() == 0 || termino.ftc == 0 || Doc.getTamBytes() == 0) return 0;
 
-    int N = getIndiceDocs().size();
-    if (N == 0) return 0;
+    // lambda_t = ft / N
+    double lambda_t = 1.0 * termino.ftc / getInformacionColeccionDocs().getNumDocs();
 
-    else {
-        return (1.0 * ft/N);
-    }
-}
+    if (lambda_t == 0) return 0;
 
-double Buscador::fPrimaTerminoDocumento (const InformacionTermino& termino, const InfDoc& Doc) const
-{
-    InfTermDoc infter;
-    if (!termino.IndexedAtDocument(Doc.getIdDoc(), infter)) return 0;
-    double res = infter.posTerm.size() * log2(1 + (c * (getInformacionColeccionDocs().getTamBytes() / getInformacionColeccionDocs().numDocs) / Doc.getTamBytes()));
+    // f*_t,d
+    InfTermDoc infTerm;
+    if (!termino.IndexedAtDocument(Doc.getIdDoc(), infTerm)) return 0;
+
+    double ft_d = infTerm.ft;
+
+    double avr_ld = getInformacionColeccionDocs().getTamBytes() / getInformacionColeccionDocs().getNumTotalPal();
+    double ld = Doc.getNumPal();
+
+    double f_t_d = ft_d * log2(1 + ((c * avr_ld) / ld));
+
+    // w_t,d
+    double ft = termino.ftc;
+    double nt = termino.l_docs.size();
+
+    double res = (log2(1 + lambda_t) + f_t_d * log2((1 + lambda_t) / lambda_t));
+    res *= (ft + 1) / (nt * (f_t_d + 1));
+
     return res;
 }
 
 /** Funciones utilizadas en el modelo BM25*/
 double Buscador::score(const InfDoc& Doc, double& avgdl)
 {
-    double salida = 0;
+    double res = 0;
 
-    unordered_map<string, InformacionTerminoPregunta>::const_iterator it;
-    for (it = getIndicePregunta().begin(); it!= getIndicePregunta().end(); it++)
+    for (const auto& [termino, infoPregunta] : getIndicePregunta()) 
     {
-        double fqiD = 0;
-        //Localizo el termino en el indice
-        unordered_map<string, InformacionTermino>::const_iterator ittermino;
-        ittermino = getIndice().find((*it).first);
-        if (ittermino != getIndice().end())
+        double fqi_D = 0;
+
+        auto it = getIndice().find(termino);
+        if (it != getIndice().end())    // El termino se encuentra en el documento
         {
-            //Obtengo la informacion del Termino/Documento
-            InfTermDoc itd;
-            if (ittermino->second.IndexedAtDocument(Doc.getIdDoc(), itd))
+            InfTermDoc infTermDoc;
+            if (it->second.IndexedAtDocument(Doc.getIdDoc(), infTermDoc)) 
             {
-                //Obtengo la frecuencia del termino en el documento
-                fqiD = itd.ft;
+                fqi_D = infTermDoc.ft;  
             }
         }
 
-        //Solo si fqid es distinto de 0 tiene sentido continuar
-        if (fqiD != 0)
-        {
-            double salidaTermporal = 0;
-            salidaTermporal = 1.0 * fqiD * (k1 +1);
-            salidaTermporal = 1.0 * salidaTermporal / (fqiD + k1 * (1 - b + b * (Doc.getNumPalSinParada() / avgdl)  ));
+        // Si no aparece, no aporta al score
+        if (fqi_D == 0) return 0;
 
-            if (salidaTermporal != 0)
-            {
-                double idf = IDF((*it).first);
-                salidaTermporal = salidaTermporal * idf;
-                salida += salidaTermporal;
-            }
-        }
+        // |D|
+        double D_abs = Doc.getNumPal();
+
+        // Sumar al resultado
+        res += IDF(termino) * ((fqi_D * (k1 + 1)) / (fqi_D + k1 * (1 - b + b * (D_abs / avgdl))));
     }
-    return salida;
+
+    return res;
 }
 
 double Buscador::IDF (const string& termino)
 {
-    double salida = 0;
-    //Obtengo (nqi) numero de documentos en los que aparece el termino
-    long int nqi = 0;
-    unordered_map<string, InformacionTermino>::const_iterator it;
-    it = getIndice().find(termino);
-    if (it != getIndice().end())
+    double N = getInformacionColeccionDocs().getNumDocs();
+    double nqi = 0;
+
+    auto it = getIndice().find(termino);
+    if (it != getIndice().end()) 
     {
-        nqi = (*it).second.l_docs.size();
+        nqi = it->second.l_docs.size();  
     }
-    salida = getIndiceDocs().size() - nqi + 0.5;
-    salida = 1.0 * salida / (nqi+0.5);
-    salida = log(salida);
-    return salida;
+
+    return log((N - nqi + 0.5) / (nqi + 0.5));
 }
 
 
+//////////////////////// CONSTRUCTORES ///////////////////////
 Buscador::Buscador(const string& directorioIndexacion, const int& f): IndexadorHash(directorioIndexacion)
 {
     formSimilitud = f;
@@ -213,6 +241,7 @@ Buscador::~Buscador()
 }
 
 
+///////////////////////// OPERADORES /////////////////////////
 Buscador& Buscador::operator= (const Buscador& buscador)
 {
     Copia(buscador);
@@ -220,6 +249,7 @@ Buscador& Buscador::operator= (const Buscador& buscador)
 }
 
 
+///////////////////// FUNCIONES PÚBLICAS /////////////////////
 bool Buscador::Buscar(const int& numDocumentos)
 {
     //Vacio los resultados anteriores
@@ -232,10 +262,11 @@ bool Buscador::Buscar(const int& numDocumentos)
     {    
         //Formula DFR
         //Añado a la lista la similitud para cada documento de la coleccion
-        unordered_map<string, InfDoc>::const_iterator it;
-        for (it = getIndiceDocs().begin(); it != getIndiceDocs().end(); it++)
+        int numPreg = 0;
+        for (const auto& [_, infDoc] : getIndiceDocs()) 
         {
-            docsOrdenados.push(ResultadoRI(sim(it->second), (*it).second.idDoc, 1));
+            docsOrdenados.push(ResultadoRI(sim(infDoc), infDoc.getIdDoc(), numPreg));
+            numPreg++;
         }
     }
     else
@@ -243,18 +274,18 @@ bool Buscador::Buscar(const int& numDocumentos)
         //Primero necesito calcular el parametro avgdl
         //que es la media del numero de palabras de la coleccion
         double avgdl = 0;
-        unordered_map<string, InfDoc>::const_iterator itd;
-        for (itd = getIndiceDocs().begin(); itd != getIndiceDocs().end(); itd++)
+        for (const auto& [_, infDoc] : getIndiceDocs()) 
         {
-            avgdl += (*itd).second.getNumPalSinParada();
+            avgdl += infDoc.getNumPalSinParada();
         }
         avgdl = 1.0 * avgdl / getIndiceDocs().size();
 
         //Formula BM25
-        unordered_map<string, InfDoc>::const_iterator it;
-        for (it = getIndiceDocs().begin(); it != getIndiceDocs().end(); it++)
+        int numPreg = 0;
+        for (const auto& [_, infDoc] : getIndiceDocs()) 
         {
-            docsOrdenados.push(ResultadoRI(score(it->second, avgdl), it->second.idDoc, 0));
+            docsOrdenados.push(ResultadoRI(score(infDoc, avgdl), infDoc.getIdDoc(), numPreg));
+            numPreg++;
         }
     }
     return true;

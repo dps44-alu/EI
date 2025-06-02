@@ -95,7 +95,7 @@ public:
     InformacionPregunta getInfPregunta () const;
     std::unordered_map<std::string, InformacionTermino> getIndice () const;
     InfColeccionDocs getInformacionColeccionDocs () const;
-
+    string getPregunta () const;
 
 private:
     // Miembros privados

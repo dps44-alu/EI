@@ -9,6 +9,8 @@
 #include <vector>
 #include <ctime>         // Para struct tm
 
+using namespace std;
+
 // --- Clase Fecha ---
 class Fecha
 {
@@ -36,6 +38,8 @@ public:
     int numTotalPalDiferentes;
 
     int getNumTotalPal () const { return numTotalPal; }
+    int getNumTotalPalSinParada () const { return numTotalPalSinParada; }
+    int getNumTotalPalDiferentes () const { return numTotalPalDiferentes; }
 };
 
 // --- Clase InformacionTerminoPregunta ---
@@ -72,6 +76,8 @@ public:
 
     long int getNumDocs () const { return numDocs; }
     long int getNumTotalPal () const { return numTotalPal; }
+    long int getNumTotalPalSinParada () const { return numTotalPalSinParada; }
+    long int getNumTotalPalDiferentes () const { return numTotalPalDiferentes; }
     long int getTamBytes () const { return tamBytes; }
 };
 
@@ -132,19 +138,17 @@ public:
 
     // Retorna True si el termino esta indexado en el documento con id pasado
     // En caso afirmativo, se utiliza el infdoc por parametro para retornar la referencia al objeto InformacionTerminoDocumento
-    bool IndexedAtDocument (const int& d, InfTermDoc& infdoc) const
+    bool IndexedAtDocument (const int& d, InfTermDoc& infTermDoc) const
     {
-        bool res = false;
-        std::unordered_map<long int, InfTermDoc>::const_iterator it1;
-        it1 = l_docs.find(d);
+        auto it = l_docs.find(d);
 
-        if (it1 != l_docs.end())
+        if (it != l_docs.end())
         {
-            res = true;
-            infdoc = it1->second;
+            infTermDoc = it->second;
+            return true;
         }
 
-        return res;
+        return false;
     }
 };
 

@@ -116,108 +116,137 @@ string Buscador::generarResultados (const int& numDocumentos) const
     return resultado;
 }
 
-/** Retorna un indice de similitus entre la query indexada y el documento pasado*/
-double Buscador::sim (const InfDoc& Doc)
+// w_t,q : peso en la query de un termino de la query
+double Buscador::wt_q (const InformacionTerminoPregunta& infTermPreg)
 {
-    double res = 0;
-
-    for (const auto& [str, infPreg] : getIndicePregunta())
-    {
-        InformacionTermino infTerm;
-        if (Devuelve(str, infTerm))
-        {
-            res += wt_q(infPreg) * wt_d(infTerm, Doc);
-        }
-    }
-
-    return res;
-}
-
-// w_t,q : Devuelve el peso que tiene un termino en la query indexada
-double Buscador::wt_q (const InformacionTerminoPregunta& termino)
-{
+    // k : número de términos (no de parada) de la query q
     double k = getInfPregunta().getNumTotalPal();
 
     if (k == 0) return 0;
 
-    return 1.0 * termino.ft / k;
+    // f_t,q : número de veces que el término aparece en la query
+    return 1.0 * infTermPreg.ft / k;
 }
 
-// w_t,d : Devuelve el peso de un termino en el documento pasado por parametro
-double Buscador::wt_d (const InformacionTermino& termino, const InfDoc& Doc)
+// w_t,d : peso en el documento de un termino de la query
+double Buscador::wt_d (const InformacionTermino& infTerm, const InfDoc& infDoc)
 {
-    if (termino.l_docs.size() == 0 || termino.ftc == 0 || Doc.getTamBytes() == 0) return 0;
+    if (infTerm.l_docs.size() == 0 || infTerm.ftc == 0 || infDoc.getTamBytes() == 0) return 0.0;
+
+    // f_t : número total de veces que el término aparece en toda la colección
+    double ft = infTerm.ftc;
 
     // lambda_t = ft / N
-    double lambda_t = 1.0 * termino.ftc / getInformacionColeccionDocs().getNumDocs();
+    // N : cantidad de documentos en la colección 
+    double lambda_t = 1.0 * ft / getInformacionColeccionDocs().getNumDocs();
 
-    if (lambda_t == 0) return 0;
+    if (lambda_t == 0.0) return 0.0;
 
-    // f*_t,d
-    InfTermDoc infTerm;
-    if (!termino.IndexedAtDocument(Doc.getIdDoc(), infTerm)) return 0;
+    InfTermDoc infTermDoc;
+    if (!infTerm.IndexedAtDocument(infDoc.getIdDoc(), infTermDoc)) return 0;
 
-    double ft_d = infTerm.ft;
+    // f_t,d : número de veces que el término aparece en el documento
+    double ft_d = infTermDoc.ft;
 
+    // l_d : longitud en palabras (no de parada) del documento
+    double ld = infDoc.getNumPal();
+
+    // avr_l_d : media de palabras (no de parada) del tamaño de los documentos
     double avr_ld = getInformacionColeccionDocs().getTamBytes() / getInformacionColeccionDocs().getNumTotalPal();
-    double ld = Doc.getNumPal();
 
-    double f_t_d = ft_d * log2(1 + ((c * avr_ld) / ld));
+    // f*_t,d = f_t,d * log2(1 + ((c * avr_l_d) / l_d))
+    double s0 = 1.0 + ((c * avr_ld) / ld);
+    if      (s0 > 0.0)  s0 = log2(s0);
+    else                s0 = log2(1.0);
 
-    // w_t,d
-    double ft = termino.ftc;
-    double nt = termino.l_docs.size();
+    double f_t_d = ft_d * s0;
 
-    double res = (log2(1 + lambda_t) + f_t_d * log2((1 + lambda_t) / lambda_t));
-    res *= (ft + 1) / (nt * (f_t_d + 1));
+    // n_t : número de documentos en los que aparece el término
+    double nt = infTerm.l_docs.size();
+
+    double s1 = 1.0 + lambda_t;
+    if      (s1 > 0.0)  s1 = log2(s1);
+    else                s1 = log2(1.0);
+
+    double s2 = (1.0 + lambda_t) / lambda_t;
+    if      (s2 > 0.0)  s2 = log2(s2);
+    else                s2 = log2(1.0);
+
+    double res = (s1 + f_t_d * s2);
+    res *= (ft + 1.0) / (nt * (f_t_d + 1.0));
 
     return res;
 }
 
-/** Funciones utilizadas en el modelo BM25*/
-double Buscador::score(const InfDoc& Doc, double& avgdl)
+/** Devuelve un indice de similitus entre la query indexada y el documento pasado*/
+double Buscador::sim (const InfDoc& Doc)
 {
-    double res = 0;
+    double sim = 0;
 
-    for (const auto& [termino, infoPregunta] : getIndicePregunta()) 
+    // k : número de términos (no de parada) de la query q
+    for (const auto& [termino, infTermPreg] : getIndicePregunta())
     {
-        double fqi_D = 0;
-
-        auto it = getIndice().find(termino);
-        if (it != getIndice().end())    // El termino se encuentra en el documento
+        InformacionTermino infTerm;
+        if (Devuelve(termino, infTerm))
         {
-            InfTermDoc infTermDoc;
-            if (it->second.IndexedAtDocument(Doc.getIdDoc(), infTermDoc)) 
-            {
-                fqi_D = infTermDoc.ft;  
-            }
+            sim += wt_q(infTermPreg) * wt_d(infTerm, Doc);
         }
-
-        // Si no aparece, no aporta al score
-        if (fqi_D == 0) return 0;
-
-        // |D|
-        double D_abs = Doc.getNumPal();
-
-        // Sumar al resultado
-        res += IDF(termino) * ((fqi_D * (k1 + 1)) / (fqi_D + k1 * (1 - b + b * (D_abs / avgdl))));
     }
 
-    return res;
+    return sim;
 }
 
 double Buscador::IDF (const string& termino)
 {
+    // N : cantidad de documentos en la colección
     double N = getInformacionColeccionDocs().getNumDocs();
+
+    // n(q_i) : número de documentos en los que aparece el término q_i
     double nqi = 0;
 
-    auto it = getIndice().find(termino);
-    if (it != getIndice().end()) 
+    InformacionTermino infTerm;
+    if (Devuelve(termino, infTerm))
     {
-        nqi = it->second.l_docs.size();  
+        nqi = static_cast<double>(infTerm.l_docs.size()); 
     }
 
-    return log((N - nqi + 0.5) / (nqi + 0.5));
+    return log2((N - nqi + 0.5) / (nqi + 0.5));
+}
+
+// Modelo BM25
+double Buscador::score(const InfDoc& Doc, double& avgdl)
+{
+    double score = 0;
+
+    // n : número de términos (no de parada) de la query
+    for (const auto& [termino, infTermPreg] : getIndicePregunta()) 
+    {
+        // f(q_i, D) : frecuencia del término q_i en el documento D
+        double fqi_D = 0;
+
+        InformacionTermino infTerm;
+        if (Devuelve(termino, infTerm))
+        {
+            InfTermDoc infTermDoc;
+            if (infTerm.IndexedAtDocument(static_cast<long>(Doc.getIdDoc()), infTermDoc)) 
+            {
+                fqi_D = static_cast<double>(infTermDoc.ft);  
+            }
+        }
+
+        // Si no aparece, suma 0 al score
+        if (fqi_D == 0.0) continue;
+
+        // |D| : número de palabras del documento D
+        double D_abs = Doc.getNumPal();
+
+        // Sumar al resultado
+        double d = (fqi_D + k1 * (1.0 - b + b * (D_abs / avgdl)));
+        if (!(d > 0.0)) d = 1.0;
+        score += IDF(termino) * ((fqi_D * (k1 + 1.0)) / d);
+    }
+
+    return score;
 }
 
 
@@ -262,30 +291,20 @@ bool Buscador::Buscar(const int& numDocumentos)
     {    
         //Formula DFR
         //Añado a la lista la similitud para cada documento de la coleccion
-        int numPreg = 0;
         for (const auto& [_, infDoc] : getIndiceDocs()) 
         {
-            docsOrdenados.push(ResultadoRI(sim(infDoc), infDoc.getIdDoc(), numPreg));
-            numPreg++;
+            docsOrdenados.push(ResultadoRI(sim(infDoc), infDoc.getIdDoc(), 0));
         }
     }
     else
     {
-        //Primero necesito calcular el parametro avgdl
-        //que es la media del numero de palabras de la coleccion
-        double avgdl = 0;
-        for (const auto& [_, infDoc] : getIndiceDocs()) 
-        {
-            avgdl += infDoc.getNumPal();
-        }
-        avgdl = 1.0 * avgdl / getIndiceDocs().size();
+        // avgdl : media de todas las |D| en la colección
+        double avgdl = 1.0 * getInformacionColeccionDocs().getNumTotalPal() / getInformacionColeccionDocs().getNumDocs();
 
         //Formula BM25
-        int numPreg = 0;
         for (const auto& [_, infDoc] : getIndiceDocs()) 
         {
-            docsOrdenados.push(ResultadoRI(score(infDoc, avgdl), infDoc.getIdDoc(), numPreg));
-            numPreg++;
+            docsOrdenados.push(ResultadoRI(score(infDoc, avgdl), infDoc.getIdDoc(), 0));
         }
     }
     return true;
@@ -293,7 +312,7 @@ bool Buscador::Buscar(const int& numDocumentos)
 
 bool Buscador::Buscar(const string& dirPreguntas, const int& numDocumentos, const int& numPregInicio, const int& numPregFin)
 {
-    double avgdl = 0;
+    double avgdl = 0.0;
 
     //Vacio los resultados anteriores
     while (!docsOrdenados.empty()) 
@@ -304,20 +323,20 @@ bool Buscador::Buscar(const string& dirPreguntas, const int& numDocumentos, cons
     //Si se utiliza BM25, calculo ya avgdl que se utilizara para todos los calculos posteriores
     if (formSimilitud == 1)
     {
-        unordered_map<string, InfDoc>::const_iterator itd;
-        for (itd = getIndiceDocs().begin(); itd != getIndiceDocs().end(); itd++){
-            avgdl += itd->second.getNumPalSinParada();
+        for (const auto& [_, infDoc] : getIndiceDocs()) 
+        {
+            avgdl += infDoc.getNumPal();
         }
         avgdl = 1.0 * avgdl / getIndiceDocs().size();
     }
 
-    for (int actual = numPregInicio; actual < numPregFin || actual == numPregFin; actual++)
+    for (int numPreg = numPregInicio; numPreg <= numPregFin; numPreg++)
     {
         ifstream input;
         string fichero;
         ostringstream convert;
-        convert << actual;
-        fichero = dirPreguntas+"/"+convert.str()+".txt";
+        convert << numPreg;
+        fichero = dirPreguntas + "/" + convert.str() + ".txt";
 
         //Obtengo la pregunta del fichero numero X
         input.open(fichero.c_str());
@@ -336,19 +355,17 @@ bool Buscador::Buscar(const string& dirPreguntas, const int& numDocumentos, cons
             //Formula DFR
             if (formSimilitud == 0){
                 //Añado a la lista la similitud para cada documento de la coleccion
-                unordered_map<string, InfDoc>::const_iterator it;
-                for (it = getIndiceDocs().begin(); it != getIndiceDocs().end(); it++)
+                for (const auto& [_, infDoc] : getIndiceDocs()) 
                 {
-                    temporal.push(ResultadoRI(sim(it->second), it->second.idDoc, actual));
+                    temporal.push(ResultadoRI(sim(infDoc), infDoc.idDoc, numPreg));
                 }
             }
             else
             {
                 //Formula BM25
-                unordered_map<string, InfDoc>::const_iterator it;
-                for (it = getIndiceDocs().begin(); it != getIndiceDocs().end(); it++)
+                for (const auto& [_, infDoc] : getIndiceDocs()) 
                 {
-                    temporal.push(ResultadoRI(score(it->second, avgdl), it->second.idDoc, actual));
+                    temporal.push(ResultadoRI(score(infDoc, avgdl), infDoc.idDoc, numPreg));
                 }
             }
 

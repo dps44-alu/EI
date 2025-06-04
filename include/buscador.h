@@ -55,11 +55,15 @@ class Buscador: public IndexadorHash {
         
         double b;
 
+        double avgdl = 0.0;
+
         unordered_map<std::string, InformacionTermino> cacheTerminosConsulta;
         
         void Copia(const Buscador&);
 
         string generarResultados (const int&) const;
+
+        void CalcularAvgdl();
 
         double sim (const InfDoc&);
 
@@ -67,7 +71,7 @@ class Buscador: public IndexadorHash {
 
         double wt_d (const InformacionTermino&, const InfDoc&);
 
-        double score (const InfDoc&, double&);
+        double score (const InfDoc&);
 
         double IDF (const string&);
 

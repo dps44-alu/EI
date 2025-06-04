@@ -64,6 +64,8 @@ void Buscador::Copia (const Buscador& buscador)
     c = 2;
     k1 = 1.2;
     b = 0.75;
+    avgdl = buscador.avgdl;
+    cacheTerminosConsulta = buscador.cacheTerminosConsulta;
 }
 
 string Buscador::generarResultados (const int& numDocumentos) const
@@ -115,6 +117,19 @@ string Buscador::generarResultados (const int& numDocumentos) const
 
     return str;
 }
+
+void Buscador::CalcularAvgdl() {
+    // avgdl : media de todas las |D| en la colección
+    avgdl = 0.0;
+
+    for (const auto& [_, infDoc] : GetIndiceDocs()) 
+    {
+        avgdl += infDoc.GetNumPal();
+    }
+
+    avgdl = 1.0 * avgdl / GetIndiceDocs().size();
+}
+
 
 // w_t,q : peso en la query de un termino de la query
 double Buscador::wt_q (const InformacionTerminoPregunta& infTermPreg)
@@ -214,7 +229,7 @@ double Buscador::IDF (const string& termino)
 }
 
 // Modelo BM25
-double Buscador::score(const InfDoc& Doc, double& avgdl)
+double Buscador::score(const InfDoc& Doc)
 {
     double score = 0;
 
@@ -260,6 +275,7 @@ Buscador::Buscador(const string& directorioIndexacion, const int& f): IndexadorH
     c = 2;
     k1 = 1.2;
     b = 0.75;
+    CalcularAvgdl();
 }
 
 Buscador::Buscador(const Buscador& buscador): IndexadorHash(buscador)
@@ -314,13 +330,10 @@ bool Buscador::Buscar(const int& numDocumentos)
     }
     else
     {
-        // avgdl : media de todas las |D| en la colección
-        double avgdl = 1.0 * GetInformacionColeccionDocs().GetNumTotalPal() / GetInformacionColeccionDocs().GetNumDocs();
-
         // BM25
         for (const auto& [_, infDoc] : GetIndiceDocs()) 
         {
-            docsOrdenados.push(ResultadoRI(score(infDoc, avgdl), infDoc.GetIdDoc(), 0));
+            docsOrdenados.push(ResultadoRI(score(infDoc), infDoc.GetIdDoc(), 0));
         }
     }
     return true;
@@ -328,18 +341,7 @@ bool Buscador::Buscar(const int& numDocumentos)
 
 bool Buscador::Buscar(const string& dirPreguntas, const int& numDocumentos, const int& numPregInicio, const int& numPregFin)
 {
-    double avgdl = 0.0;
-
     docsOrdenados = {};
-
-    if (formSimilitud == 1)
-    {
-        for (const auto& [_, infDoc] : GetIndiceDocs()) 
-        {
-            avgdl += infDoc.GetNumPal();
-        }
-        avgdl = 1.0 * avgdl / GetIndiceDocs().size();
-    }
 
     for (int numPreg = numPregInicio; numPreg <= numPregFin; numPreg++)
     {
@@ -362,6 +364,8 @@ bool Buscador::Buscar(const string& dirPreguntas, const int& numDocumentos, cons
             IndexarPregunta(pregunta);
             priority_queue<ResultadoRI> temporal;
 
+            CalcularAvgdl();
+
             // DFR
             if (formSimilitud == 0)
             {
@@ -375,7 +379,7 @@ bool Buscador::Buscar(const string& dirPreguntas, const int& numDocumentos, cons
                 // BM25
                 for (const auto& [_, infDoc] : GetIndiceDocs()) 
                 {
-                    temporal.push(ResultadoRI(score(infDoc, avgdl), infDoc.GetIdDoc(), numPreg));
+                    temporal.push(ResultadoRI(score(infDoc), infDoc.GetIdDoc(), numPreg));
                 }
             }
 

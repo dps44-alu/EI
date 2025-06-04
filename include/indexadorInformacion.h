@@ -123,17 +123,15 @@ class InformacionTermino
         void AddInf     (const int& id, const InfTermDoc& inf)      { l_docs.insert({id, inf}); }
         void DeleteInf  (const int& i)                              { l_docs.erase(i); }
 
-        bool IndexedAtDocument (const int& d, InfTermDoc& infTermDoc) const
+        const InfTermDoc* IndexedAtDocument (const int& d) const
         {
             auto it = l_docs.find(d);
-
-            if (it != l_docs.end())
+            if (it != l_docs.end()) 
             {
-                infTermDoc = it->second;
-                return true;
+                return &(it->second);
             }
 
-            return false;
+            return nullptr;
         }
 };
 

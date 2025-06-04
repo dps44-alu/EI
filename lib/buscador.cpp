@@ -142,11 +142,11 @@ double Buscador::wt_d (const InformacionTermino& infTerm, const InfDoc& infDoc)
 
     if (lambda_t == 0.0) return 0.0;
 
-    InfTermDoc infTermDoc;
-    if (!infTerm.IndexedAtDocument(infDoc.GetIdDoc(), infTermDoc)) return 0;
+    const InfTermDoc* infTermDoc = infTerm.IndexedAtDocument(infDoc.GetIdDoc());
+    if (!infTermDoc) return 0;
 
     // f_t,d : número de veces que el término aparece en el documento
-    double ft_d = infTermDoc.GetFt();
+    double ft_d = infTermDoc->GetFt();
 
     // l_d : longitud en palabras (no de parada) del documento
     double ld = infDoc.GetNumPal();
@@ -186,10 +186,10 @@ double Buscador::sim (const InfDoc& Doc)
     // k : número de términos (no de parada) de la query q
     for (const auto& [termino, infTermPreg] : GetIndicePregunta())
     {
-        InformacionTermino infTerm;
-        if (Devuelve(termino, infTerm))
+        auto it = cacheTerminosConsulta.find(termino);
+        if (it != cacheTerminosConsulta.end()) 
         {
-            sim += wt_q(infTermPreg) * wt_d(infTerm, Doc);
+            sim += wt_q(infTermPreg) * wt_d(it->second, Doc);
         }
     }
 
@@ -224,13 +224,13 @@ double Buscador::score(const InfDoc& Doc, double& avgdl)
         // f(q_i, D) : frecuencia del término q_i en el documento D
         double fqi_D = 0;
 
-        InformacionTermino infTerm;
-        if (Devuelve(termino, infTerm))
+        auto it = cacheTerminosConsulta.find(termino);
+        if (it != cacheTerminosConsulta.end()) 
         {
-            InfTermDoc infTermDoc;
-            if (infTerm.IndexedAtDocument(static_cast<long>(Doc.GetIdDoc()), infTermDoc)) 
+            const InfTermDoc* infTermDoc = it->second.IndexedAtDocument(Doc.GetIdDoc());
+            if (infTermDoc) 
             {
-                fqi_D = static_cast<double>(infTermDoc.GetFt());  
+                fqi_D = static_cast<double>(infTermDoc->GetFt());
             }
         }
 
@@ -288,11 +288,21 @@ Buscador& Buscador::operator= (const Buscador& buscador)
 ///////////////////////////////////////////////////////
 bool Buscador::Buscar(const int& numDocumentos)
 {
-    //Vacio los resultados anteriores
-    while (!docsOrdenados.empty())
+    docsOrdenados = {};
+
+    // Cachear términos de la consulta
+    unordered_map<string, InformacionTermino> cacheTerminos;
+    for (const auto& [termino, _] : GetIndicePregunta()) 
     {
-        docsOrdenados.pop();
+        InformacionTermino infTerm;
+        if (Devuelve(termino, infTerm)) 
+        {
+            cacheTerminos[termino] = infTerm;
+        }
     }
+
+    // Guardar caché en atributo temporal
+    cacheTerminosConsulta = move(cacheTerminos);
 
     if (formSimilitud == 0)
     {    
@@ -320,7 +330,7 @@ bool Buscador::Buscar(const string& dirPreguntas, const int& numDocumentos, cons
 {
     double avgdl = 0.0;
 
-    while (!docsOrdenados.empty()) docsOrdenados.pop();
+    docsOrdenados = {};
 
     if (formSimilitud == 1)
     {

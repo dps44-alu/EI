@@ -54,6 +54,8 @@ class Buscador: public IndexadorHash {
         double k1;
         
         double b;
+
+        unordered_map<std::string, InformacionTermino> cacheTerminosConsulta;
         
         void Copia(const Buscador&);
 

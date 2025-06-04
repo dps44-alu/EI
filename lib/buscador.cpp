@@ -18,8 +18,8 @@ ResultadoRI::ResultadoRI (const double& kvSimilitud, const long int& kidDoc, con
 ///////////////////////////////////////////////////////
 bool ResultadoRI::operator< (const ResultadoRI& lhs) const
 {
-    if (numPregunta == lhs.numPregunta) return (vSimilitud < lhs.vSimilitud);
-    else                                return (numPregunta > lhs.numPregunta);
+    if      (numPregunta == lhs.numPregunta)    return (vSimilitud < lhs.vSimilitud);
+    else                                        return (numPregunta > lhs.numPregunta);
 }
 
 
@@ -47,6 +47,7 @@ int ResultadoRI::NumPregunta () const
 ostream& operator<< (ostream &os, const ResultadoRI &res)
 {
     os << res.vSimilitud << "\t\t" << res.idDoc << "\t" << res.numPregunta << endl;
+
     return os;
 }
 
@@ -63,12 +64,11 @@ void Buscador::Copia (const Buscador& buscador)
     c = 2;
     k1 = 1.2;
     b = 0.75;
-    //setStopWords("StopWordsEspanyol.txt");
 }
 
 string Buscador::generarResultados (const int& numDocumentos) const
 {
-    string resultado;
+    string str;
     priority_queue<ResultadoRI> docs = docsOrdenados;
 
     for (int i = 0; i < numDocumentos && !docs.empty(); i++)
@@ -78,42 +78,42 @@ string Buscador::generarResultados (const int& numDocumentos) const
         if      (formSimilitud == 0)    salida += "DFR ";
         else                            salida += "BM25 ";
 
-        //Obtengo el nombre del fichero a partir del id de documento
-        string nombreFichero;
-        InfDoc inf;
-        getDocById(docs.top().IdDoc(), nombreFichero, inf);
+        // Obtener el nombre del fichero a partir del id de documento
+        string fich;
+        InfDoc infDoc;
+        getDocById(docs.top().IdDoc(), fich, infDoc);
 
-        //Al nombre de fichero le quito la ruta de la carpeta
-        int ultimaBarra = -1;
+        // Quitar la ruta de la carpeta al nombre
+        int posBarra = -1;
 
-        for (int j = 0; j < nombreFichero.size(); j++)
+        for (int j = 0; j < fich.size(); j++)
         {
-            if (nombreFichero[j] == '/') 
+            if (fich[j] == '/') 
             {
-                ultimaBarra = j + 1;
+                posBarra = j + 1;
             }
         }
 
-        if (ultimaBarra != -1)
+        if (posBarra != -1)
         {
-            nombreFichero = nombreFichero.substr(ultimaBarra, nombreFichero.size() - ultimaBarra);
+            fich = fich.substr(posBarra, fich.size() - posBarra);
         }
 
-        //Ahora le quito la extension .tim, quitandole los ultimos 4 caracteres
-        nombreFichero = nombreFichero.substr(0, nombreFichero.size() - 4);
+        // Quitar la extension .tim, quitandole los ultimos 4 caracteres
+        fich = fich.substr(0, fich.size() - 4);
 
-        salida += nombreFichero + " ";
+        salida += fich + " ";
 
         ostringstream conv;
         conv << i << " " << docs.top().VSimilitud() << " " << GetPregunta();
 
         salida += conv.str();
-        resultado += salida + '\n';
+        str += salida + '\n';
 
         docs.pop();
     }
 
-    return resultado;
+    return str;
 }
 
 // w_t,q : peso en la query de un termino de la query
@@ -242,7 +242,8 @@ double Buscador::score(const InfDoc& Doc, double& avgdl)
 
         // Sumar al resultado
         double d = (fqi_D + k1 * (1.0 - b + b * (D_abs / avgdl)));
-        if (!(d > 0.0)) d = 1.0;
+        if (d <= 0.0) d = 1.0;
+
         score += IDF(termino) * ((fqi_D * (k1 + 1.0)) / d);
     }
 
@@ -295,8 +296,7 @@ bool Buscador::Buscar(const int& numDocumentos)
 
     if (formSimilitud == 0)
     {    
-        //Formula DFR
-        //Añado a la lista la similitud para cada documento de la coleccion
+        // DFR
         for (const auto& [_, infDoc] : GetIndiceDocs()) 
         {
             docsOrdenados.push(ResultadoRI(sim(infDoc), infDoc.GetIdDoc(), 0));
@@ -307,7 +307,7 @@ bool Buscador::Buscar(const int& numDocumentos)
         // avgdl : media de todas las |D| en la colección
         double avgdl = 1.0 * GetInformacionColeccionDocs().GetNumTotalPal() / GetInformacionColeccionDocs().GetNumDocs();
 
-        //Formula BM25
+        // BM25
         for (const auto& [_, infDoc] : GetIndiceDocs()) 
         {
             docsOrdenados.push(ResultadoRI(score(infDoc, avgdl), infDoc.GetIdDoc(), 0));
@@ -320,13 +320,8 @@ bool Buscador::Buscar(const string& dirPreguntas, const int& numDocumentos, cons
 {
     double avgdl = 0.0;
 
-    //Vacio los resultados anteriores
-    while (!docsOrdenados.empty()) 
-    {
-        docsOrdenados.pop();
-    }
+    while (!docsOrdenados.empty()) docsOrdenados.pop();
 
-    //Si se utiliza BM25, calculo ya avgdl que se utilizara para todos los calculos posteriores
     if (formSimilitud == 1)
     {
         for (const auto& [_, infDoc] : GetIndiceDocs()) 
@@ -344,7 +339,6 @@ bool Buscador::Buscar(const string& dirPreguntas, const int& numDocumentos, cons
         convert << numPreg;
         fichero = dirPreguntas + "/" + convert.str() + ".txt";
 
-        //Obtengo la pregunta del fichero numero X
         input.open(fichero.c_str());
         if (!input)
         {
@@ -358,9 +352,9 @@ bool Buscador::Buscar(const string& dirPreguntas, const int& numDocumentos, cons
             IndexarPregunta(pregunta);
             priority_queue<ResultadoRI> temporal;
 
-            //Formula DFR
-            if (formSimilitud == 0){
-                //Añado a la lista la similitud para cada documento de la coleccion
+            // DFR
+            if (formSimilitud == 0)
+            {
                 for (const auto& [_, infDoc] : GetIndiceDocs()) 
                 {
                     temporal.push(ResultadoRI(sim(infDoc), infDoc.GetIdDoc(), numPreg));
@@ -368,7 +362,7 @@ bool Buscador::Buscar(const string& dirPreguntas, const int& numDocumentos, cons
             }
             else
             {
-                //Formula BM25
+                // BM25
                 for (const auto& [_, infDoc] : GetIndiceDocs()) 
                 {
                     temporal.push(ResultadoRI(score(infDoc, avgdl), infDoc.GetIdDoc(), numPreg));

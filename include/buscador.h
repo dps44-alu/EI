@@ -2,10 +2,11 @@
 #define BUSCADOR_H_
 
 #include "indexadorHash.h"
-#include "ResultadoRI.h"
 
 #include <queue>
 #include <cmath>
+#include <sstream>
+#include <fstream>
 
 using namespace std;
 
@@ -44,7 +45,7 @@ class Buscador: public IndexadorHash {
     private:	
         Buscador();	
         
-        priority_queue< ResultadoRI > docsOrdenados;	
+        priority_queue<ResultadoRI> docsOrdenados;	
         
         int formSimilitud;
         

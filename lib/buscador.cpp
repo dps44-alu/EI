@@ -1,13 +1,10 @@
 #include "../include/buscador.h"   
 
-//////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////
-//
-//  RESULTADORI
-//
-//////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////
-//////////////////////// CONSTRUCTORES ///////////////////////
+/****************************************** ResultadoRI ******************************************/
+
+///////////////////////////////////////////////////////
+// CONTRUCTORES
+///////////////////////////////////////////////////////
 ResultadoRI::ResultadoRI (const double& kvSimilitud, const long int& kidDoc, const int& np)
 {
     vSimilitud = kvSimilitud;
@@ -16,7 +13,9 @@ ResultadoRI::ResultadoRI (const double& kvSimilitud, const long int& kidDoc, con
 }
 
 
-///////////////////////// OPERADORES /////////////////////////
+///////////////////////////////////////////////////////
+// OPERADORES
+///////////////////////////////////////////////////////
 bool ResultadoRI::operator< (const ResultadoRI& lhs) const
 {
     if (numPregunta == lhs.numPregunta) return (vSimilitud < lhs.vSimilitud);
@@ -24,7 +23,9 @@ bool ResultadoRI::operator< (const ResultadoRI& lhs) const
 }
 
 
-///////////////////// FUNCIONES PÚBLICAS /////////////////////
+///////////////////////////////////////////////////////
+// FUNCIONES PÚBLICAS
+///////////////////////////////////////////////////////
 double ResultadoRI::VSimilitud () const
 {
     return vSimilitud;
@@ -40,7 +41,9 @@ int ResultadoRI::NumPregunta () const
     return numPregunta;
 }
 
-////////////////////// FUNCIONES AMIGAS //////////////////////
+///////////////////////////////////////////////////////
+// FUNCIONES AMIGAS
+///////////////////////////////////////////////////////
 ostream& operator<< (ostream &os, const ResultadoRI &res)
 {
     os << res.vSimilitud << "\t\t" << res.idDoc << "\t" << res.numPregunta << endl;
@@ -49,14 +52,11 @@ ostream& operator<< (ostream &os, const ResultadoRI &res)
 
 
 
-//////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////
-//
-//  BUSCADOR
-//
-//////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////
-///////////////////// FUNCIONES PRIVADAS /////////////////////
+/****************************************** Buscador ******************************************/
+
+///////////////////////////////////////////////////////
+// FUNCIONES PRIVADAS
+///////////////////////////////////////////////////////
 void Buscador::Copia (const Buscador& buscador)
 {
     formSimilitud = buscador.formSimilitud;
@@ -105,7 +105,7 @@ string Buscador::generarResultados (const int& numDocumentos) const
         salida += nombreFichero + " ";
 
         ostringstream conv;
-        conv << i << " " << docs.top().VSimilitud() << " " << getPregunta();
+        conv << i << " " << docs.top().VSimilitud() << " " << GetPregunta();
 
         salida += conv.str();
         resultado += salida + '\n';
@@ -120,39 +120,39 @@ string Buscador::generarResultados (const int& numDocumentos) const
 double Buscador::wt_q (const InformacionTerminoPregunta& infTermPreg)
 {
     // k : número de términos (no de parada) de la query q
-    double k = getInfPregunta().getNumTotalPal();
+    double k = GetInfPregunta().GetNumTotalPal();
 
     if (k == 0) return 0;
 
     // f_t,q : número de veces que el término aparece en la query
-    return 1.0 * infTermPreg.ft / k;
+    return 1.0 * infTermPreg.GetFt() / k;
 }
 
 // w_t,d : peso en el documento de un termino de la query
 double Buscador::wt_d (const InformacionTermino& infTerm, const InfDoc& infDoc)
 {
-    if (infTerm.l_docs.size() == 0 || infTerm.ftc == 0 || infDoc.getTamBytes() == 0) return 0.0;
+    if (infTerm.GetL_docs_const().size() == 0 || infTerm.GetFtc() == 0 || infDoc.GetTamBytes() == 0) return 0.0;
 
     // f_t : número total de veces que el término aparece en toda la colección
-    double ft = infTerm.ftc;
+    double ft = infTerm.GetFtc();
 
     // lambda_t = ft / N
     // N : cantidad de documentos en la colección 
-    double lambda_t = 1.0 * ft / getInformacionColeccionDocs().getNumDocs();
+    double lambda_t = 1.0 * ft / GetInformacionColeccionDocs().GetNumDocs();
 
     if (lambda_t == 0.0) return 0.0;
 
     InfTermDoc infTermDoc;
-    if (!infTerm.IndexedAtDocument(infDoc.getIdDoc(), infTermDoc)) return 0;
+    if (!infTerm.IndexedAtDocument(infDoc.GetIdDoc(), infTermDoc)) return 0;
 
     // f_t,d : número de veces que el término aparece en el documento
-    double ft_d = infTermDoc.ft;
+    double ft_d = infTermDoc.GetFt();
 
     // l_d : longitud en palabras (no de parada) del documento
-    double ld = infDoc.getNumPal();
+    double ld = infDoc.GetNumPal();
 
     // avr_l_d : media de palabras (no de parada) del tamaño de los documentos
-    double avr_ld = getInformacionColeccionDocs().getTamBytes() / getInformacionColeccionDocs().getNumTotalPal();
+    double avr_ld = GetInformacionColeccionDocs().GetTamBytes() / GetInformacionColeccionDocs().GetNumTotalPal();
 
     // f*_t,d = f_t,d * log2(1 + ((c * avr_l_d) / l_d))
     double s0 = 1.0 + ((c * avr_ld) / ld);
@@ -162,7 +162,7 @@ double Buscador::wt_d (const InformacionTermino& infTerm, const InfDoc& infDoc)
     double f_t_d = ft_d * s0;
 
     // n_t : número de documentos en los que aparece el término
-    double nt = infTerm.l_docs.size();
+    double nt = infTerm.GetL_docs_const().size();
 
     double s1 = 1.0 + lambda_t;
     if      (s1 > 0.0)  s1 = log2(s1);
@@ -184,7 +184,7 @@ double Buscador::sim (const InfDoc& Doc)
     double sim = 0;
 
     // k : número de términos (no de parada) de la query q
-    for (const auto& [termino, infTermPreg] : getIndicePregunta())
+    for (const auto& [termino, infTermPreg] : GetIndicePregunta())
     {
         InformacionTermino infTerm;
         if (Devuelve(termino, infTerm))
@@ -199,7 +199,7 @@ double Buscador::sim (const InfDoc& Doc)
 double Buscador::IDF (const string& termino)
 {
     // N : cantidad de documentos en la colección
-    double N = getInformacionColeccionDocs().getNumDocs();
+    double N = GetInformacionColeccionDocs().GetNumDocs();
 
     // n(q_i) : número de documentos en los que aparece el término q_i
     double nqi = 0;
@@ -207,7 +207,7 @@ double Buscador::IDF (const string& termino)
     InformacionTermino infTerm;
     if (Devuelve(termino, infTerm))
     {
-        nqi = static_cast<double>(infTerm.l_docs.size()); 
+        nqi = static_cast<double>(infTerm.GetL_docs_const().size()); 
     }
 
     return log2((N - nqi + 0.5) / (nqi + 0.5));
@@ -219,7 +219,7 @@ double Buscador::score(const InfDoc& Doc, double& avgdl)
     double score = 0;
 
     // n : número de términos (no de parada) de la query
-    for (const auto& [termino, infTermPreg] : getIndicePregunta()) 
+    for (const auto& [termino, infTermPreg] : GetIndicePregunta()) 
     {
         // f(q_i, D) : frecuencia del término q_i en el documento D
         double fqi_D = 0;
@@ -228,9 +228,9 @@ double Buscador::score(const InfDoc& Doc, double& avgdl)
         if (Devuelve(termino, infTerm))
         {
             InfTermDoc infTermDoc;
-            if (infTerm.IndexedAtDocument(static_cast<long>(Doc.getIdDoc()), infTermDoc)) 
+            if (infTerm.IndexedAtDocument(static_cast<long>(Doc.GetIdDoc()), infTermDoc)) 
             {
-                fqi_D = static_cast<double>(infTermDoc.ft);  
+                fqi_D = static_cast<double>(infTermDoc.GetFt());  
             }
         }
 
@@ -238,7 +238,7 @@ double Buscador::score(const InfDoc& Doc, double& avgdl)
         if (fqi_D == 0.0) continue;
 
         // |D| : número de palabras del documento D
-        double D_abs = Doc.getNumPal();
+        double D_abs = Doc.GetNumPal();
 
         // Sumar al resultado
         double d = (fqi_D + k1 * (1.0 - b + b * (D_abs / avgdl)));
@@ -250,7 +250,9 @@ double Buscador::score(const InfDoc& Doc, double& avgdl)
 }
 
 
-//////////////////////// CONSTRUCTORES ///////////////////////
+///////////////////////////////////////////////////////
+// CONSTRUCTORES
+///////////////////////////////////////////////////////
 Buscador::Buscador(const string& directorioIndexacion, const int& f): IndexadorHash(directorioIndexacion)
 {
     formSimilitud = f;
@@ -270,7 +272,9 @@ Buscador::~Buscador()
 }
 
 
-///////////////////////// OPERADORES /////////////////////////
+///////////////////////////////////////////////////////
+// OPERADORES
+///////////////////////////////////////////////////////
 Buscador& Buscador::operator= (const Buscador& buscador)
 {
     Copia(buscador);
@@ -278,7 +282,9 @@ Buscador& Buscador::operator= (const Buscador& buscador)
 }
 
 
-///////////////////// FUNCIONES PÚBLICAS /////////////////////
+///////////////////////////////////////////////////////
+// FUNCIONES PÚBLICAS
+///////////////////////////////////////////////////////
 bool Buscador::Buscar(const int& numDocumentos)
 {
     //Vacio los resultados anteriores
@@ -291,20 +297,20 @@ bool Buscador::Buscar(const int& numDocumentos)
     {    
         //Formula DFR
         //Añado a la lista la similitud para cada documento de la coleccion
-        for (const auto& [_, infDoc] : getIndiceDocs()) 
+        for (const auto& [_, infDoc] : GetIndiceDocs()) 
         {
-            docsOrdenados.push(ResultadoRI(sim(infDoc), infDoc.getIdDoc(), 0));
+            docsOrdenados.push(ResultadoRI(sim(infDoc), infDoc.GetIdDoc(), 0));
         }
     }
     else
     {
         // avgdl : media de todas las |D| en la colección
-        double avgdl = 1.0 * getInformacionColeccionDocs().getNumTotalPal() / getInformacionColeccionDocs().getNumDocs();
+        double avgdl = 1.0 * GetInformacionColeccionDocs().GetNumTotalPal() / GetInformacionColeccionDocs().GetNumDocs();
 
         //Formula BM25
-        for (const auto& [_, infDoc] : getIndiceDocs()) 
+        for (const auto& [_, infDoc] : GetIndiceDocs()) 
         {
-            docsOrdenados.push(ResultadoRI(score(infDoc, avgdl), infDoc.getIdDoc(), 0));
+            docsOrdenados.push(ResultadoRI(score(infDoc, avgdl), infDoc.GetIdDoc(), 0));
         }
     }
     return true;
@@ -323,11 +329,11 @@ bool Buscador::Buscar(const string& dirPreguntas, const int& numDocumentos, cons
     //Si se utiliza BM25, calculo ya avgdl que se utilizara para todos los calculos posteriores
     if (formSimilitud == 1)
     {
-        for (const auto& [_, infDoc] : getIndiceDocs()) 
+        for (const auto& [_, infDoc] : GetIndiceDocs()) 
         {
-            avgdl += infDoc.getNumPal();
+            avgdl += infDoc.GetNumPal();
         }
-        avgdl = 1.0 * avgdl / getIndiceDocs().size();
+        avgdl = 1.0 * avgdl / GetIndiceDocs().size();
     }
 
     for (int numPreg = numPregInicio; numPreg <= numPregFin; numPreg++)
@@ -355,17 +361,17 @@ bool Buscador::Buscar(const string& dirPreguntas, const int& numDocumentos, cons
             //Formula DFR
             if (formSimilitud == 0){
                 //Añado a la lista la similitud para cada documento de la coleccion
-                for (const auto& [_, infDoc] : getIndiceDocs()) 
+                for (const auto& [_, infDoc] : GetIndiceDocs()) 
                 {
-                    temporal.push(ResultadoRI(sim(infDoc), infDoc.idDoc, numPreg));
+                    temporal.push(ResultadoRI(sim(infDoc), infDoc.GetIdDoc(), numPreg));
                 }
             }
             else
             {
                 //Formula BM25
-                for (const auto& [_, infDoc] : getIndiceDocs()) 
+                for (const auto& [_, infDoc] : GetIndiceDocs()) 
                 {
-                    temporal.push(ResultadoRI(score(infDoc, avgdl), infDoc.idDoc, numPreg));
+                    temporal.push(ResultadoRI(score(infDoc, avgdl), infDoc.GetIdDoc(), numPreg));
                 }
             }
 

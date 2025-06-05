@@ -346,24 +346,26 @@ bool Buscador::Buscar(const string& dirPreguntas, const int& numDocumentos, cons
 
     for (int numPreg = numPregInicio; numPreg <= numPregFin; numPreg++)
     {
-        ifstream input;
-        string fichero;
-        ostringstream convert;
-        convert << numPreg;
-        fichero = dirPreguntas + "/" + convert.str() + ".txt";
+        string nombre = dirPreguntas + "/" + to_string(numPreg) + ".txt";
+        ifstream fichero;
 
-        input.open(fichero.c_str());
-        if (!input)
+        fichero.open(nombre);
+        if (!fichero)
         {
-            cerr << "Error, no existe el fichero >" << fichero << "<" << endl;
-            return false;
+            continue;
         }
         else
         {
-            string pregunta;
-            getline(input, pregunta);
-            VaciarIndicePreg();
-            IndexarPregunta(pregunta);
+            string linea, pregunta;
+            while (getline(fichero, linea))
+            {
+                if (!pregunta.empty()) pregunta += ' ';
+                pregunta += linea;
+            }
+            fichero.close();
+
+            if (!IndexarPregunta(pregunta)) continue;
+
             priority_queue<ResultadoRI> temporal;
 
             // Cachear términos de la consulta
@@ -376,6 +378,9 @@ bool Buscador::Buscar(const string& dirPreguntas, const int& numDocumentos, cons
                     cacheTerminos[termino] = infTerm;
                 }
             }
+
+            // Guardar caché en atributo temporal
+            cacheTerminosConsulta = move(cacheTerminos);
 
             CalcularAvgdl();
 
@@ -402,8 +407,6 @@ bool Buscador::Buscar(const string& dirPreguntas, const int& numDocumentos, cons
                 temporal.pop();
             }
         }
-
-        input.close();
     }
 
     return true;

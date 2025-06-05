@@ -19,13 +19,13 @@ int main (int argc, char* argv[])
 
     // Crear indexador y procesar colección
     IndexadorHash indexador(
-        "./StopWordsIngles.txt",    // Stopwords
-        ". ,:",                     // Delimitadores por defecto
-        true,                       // quitarAcentos
-        true,                       // pasarAMinusculas
-        dirIndice,                  // Directorio índice
-        stemming,                   // Stemming sí/no
-        false                       // almacenarPosTerm = false
+        "./StopWordsIngles.txt",                // Stopwords
+        ",;:.-/+*\\ '\"{}[]()<>¡!¿?&#=\t@",     // Delimitadores por defecto
+        true,                                   // quitarAcentos
+        true,                                   // pasarAMinusculas
+        dirIndice,                              // Directorio índice
+        stemming,                               // Stemming sí/no
+        false                                   // almacenarPosTerm = false
     );
 
     if (!indexador.Indexar("ficherosTimes.txt")) 
@@ -39,8 +39,6 @@ int main (int argc, char* argv[])
     // Crear buscador con la fórmula indicada
     Buscador buscador(dirIndice, formulaSimilitud);
 
-    cout << buscador << endl;
-
     // Ejecutar búsqueda sobre las 83 preguntas
     buscador.Buscar("./CorpusTime/Preguntas/", 423, 1, 83);
     buscador.ImprimirResultadoBusqueda(423, nombreSalida);
@@ -48,11 +46,3 @@ int main (int argc, char* argv[])
     cout << "✅ Búsqueda completada con éxito.\n";
     return 0;
 }
-
-
-/*
-./busqueda DFR no fich_dfr_no.txt
-./busqueda DFR stemming fich_dfr_stem.txt
-./busqueda BM25 no fich_bm25_no.txt
-./busqueda BM25 stemming fich_bm25_stem.txt
-*/

@@ -68,6 +68,7 @@ void Buscador::Copia (const Buscador& buscador)
     cacheTerminosConsulta = buscador.cacheTerminosConsulta;
 }
 
+// NumPregunta FormulaSimilitud NomDocumento Posicion PuntuacionDoc PreguntaIndexada
 string Buscador::generarResultados (const int& numDocumentos) const
 {
     string str;
@@ -194,7 +195,7 @@ double Buscador::wt_d (const InformacionTermino& infTerm, const InfDoc& infDoc)
 }
 
 /** Devuelve un indice de similitus entre la query indexada y el documento pasado*/
-double Buscador::sim (const InfDoc& Doc)
+double Buscador::sim (const InfDoc& infDoc)
 {
     double sim = 0;
 
@@ -204,7 +205,7 @@ double Buscador::sim (const InfDoc& Doc)
         auto it = cacheTerminosConsulta.find(termino);
         if (it != cacheTerminosConsulta.end()) 
         {
-            sim += wt_q(infTermPreg) * wt_d(it->second, Doc);
+            sim += wt_q(infTermPreg) * wt_d(it->second, infDoc);
         }
     }
 
@@ -218,18 +219,18 @@ double Buscador::IDF (const string& termino)
 
     // n(q_i) : número de documentos en los que aparece el término q_i
     double nqi = 0;
-
-    InformacionTermino infTerm;
-    if (Devuelve(termino, infTerm))
+   
+    auto it = cacheTerminosConsulta.find(termino);
+    if (it != cacheTerminosConsulta.end()) 
     {
-        nqi = static_cast<double>(infTerm.GetL_docs_const().size()); 
+        nqi = static_cast<double>(it->second.GetL_docs_const().size()); 
     }
 
     return log2((N - nqi + 0.5) / (nqi + 0.5));
 }
 
 // Modelo BM25
-double Buscador::score(const InfDoc& Doc)
+double Buscador::score(const InfDoc& infDoc)
 {
     double score = 0;
 
@@ -237,12 +238,12 @@ double Buscador::score(const InfDoc& Doc)
     for (const auto& [termino, infTermPreg] : GetIndicePregunta()) 
     {
         // f(q_i, D) : frecuencia del término q_i en el documento D
-        double fqi_D = 0;
+        double fqi_D = 0.0;
 
         auto it = cacheTerminosConsulta.find(termino);
         if (it != cacheTerminosConsulta.end()) 
         {
-            const InfTermDoc* infTermDoc = it->second.IndexedAtDocument(Doc.GetIdDoc());
+            const InfTermDoc* infTermDoc = it->second.IndexedAtDocument(infDoc.GetIdDoc());
             if (infTermDoc) 
             {
                 fqi_D = static_cast<double>(infTermDoc->GetFt());
@@ -253,7 +254,7 @@ double Buscador::score(const InfDoc& Doc)
         if (fqi_D == 0.0) continue;
 
         // |D| : número de palabras del documento D
-        double D_abs = Doc.GetNumPal();
+        double D_abs = infDoc.GetNumPal();
 
         // Sumar al resultado
         double d = (fqi_D + k1 * (1.0 - b + b * (D_abs / avgdl)));
@@ -361,8 +362,20 @@ bool Buscador::Buscar(const string& dirPreguntas, const int& numDocumentos, cons
         {
             string pregunta;
             getline(input, pregunta);
+            VaciarIndicePreg();
             IndexarPregunta(pregunta);
             priority_queue<ResultadoRI> temporal;
+
+            // Cachear términos de la consulta
+            unordered_map<string, InformacionTermino> cacheTerminos;
+            for (const auto& [termino, _] : GetIndicePregunta()) 
+            {
+                InformacionTermino infTerm;
+                if (Devuelve(termino, infTerm)) 
+                {
+                    cacheTerminos[termino] = infTerm;
+                }
+            }
 
             CalcularAvgdl();
 
@@ -383,7 +396,7 @@ bool Buscador::Buscar(const string& dirPreguntas, const int& numDocumentos, cons
                 }
             }
 
-            for (int i = 0; i < numDocumentos; i++)
+            for (int i = 0; i < numDocumentos && !temporal.empty(); i++) 
             {
                 docsOrdenados.push(temporal.top());
                 temporal.pop();

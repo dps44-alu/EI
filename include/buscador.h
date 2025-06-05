@@ -57,7 +57,7 @@ class Buscador: public IndexadorHash {
 
         double avgdl = 0.0;
 
-        unordered_map<std::string, InformacionTermino> cacheTerminosConsulta;
+        unordered_map<string, InformacionTermino> cacheTerminosConsulta;
         
         void Copia(const Buscador&);
 

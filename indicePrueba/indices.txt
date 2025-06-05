@@ -46,14 +46,14 @@ corpus_corto/fichero2.txt
 2
 3
 23
-125 5 4 15 22 11
+125 5 5 15 7 38
 corpus_corto/fichero1.txt
 1
 6
 3
 4
 30
-125 5 4 15 22 11
+125 5 5 15 7 38
 0
 0
 . ,:

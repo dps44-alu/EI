@@ -2,9 +2,8 @@
 
 int main (int argc, char* argv[]) 
 {
-    if (argc != 4) 
+    if (argc != 4)
     {
-        cerr << "Uso: " << argv[0] << " <DFR|BM25> <stemming|no> <fichero_salida>\n";
         return 1;
     }
 
@@ -41,7 +40,8 @@ int main (int argc, char* argv[])
 
     // Ejecutar búsqueda sobre las 83 preguntas
     buscador.Buscar("./CorpusTime/Preguntas/", 423, 1, 83);
-    buscador.ImprimirResultadoBusqueda(423, nombreSalida);
+    // Mostrar todas las respuestas (423 documentos por cada una de las 83 preguntas)
+    buscador.ImprimirResultadoBusqueda(423 * 83, nombreSalida);
 
     cout << "✅ Búsqueda completada con éxito.\n";
     return 0;

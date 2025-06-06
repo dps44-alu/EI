@@ -108,7 +108,13 @@ string Buscador::generarResultados (const int& numDocumentos) const
         salida += fich + " ";
 
         ostringstream conv;
-        conv << i << " " << docs.top().VSimilitud() << " " << GetPregunta();
+        string runName;
+        if (docs.top().NumPregunta() == 0)
+            runName = GetPregunta();
+        else
+            runName = "ConjuntoDePreguntas";
+        conv << i << " " << fixed << setprecision(6) << docs.top().VSimilitud()
+            << " " << runName;
 
         salida += conv.str();
         str += salida + '\n';
@@ -123,12 +129,16 @@ void Buscador::CalcularAvgdl() {
     // avgdl : media de todas las |D| en la colección
     avgdl = 0.0;
 
-    for (const auto& [_, infDoc] : GetIndiceDocs()) 
+    for (const auto& [_, infDoc] : GetIndiceDocs())
     {
-        avgdl += infDoc.GetNumPal();
+        avgdl += infDoc.GetNumPalSinParada();
     }
 
-    avgdl = 1.0 * avgdl / GetIndiceDocs().size();
+    int numDocs = GetIndiceDocs().size();
+    if (numDocs > 0)
+        avgdl = 1.0 * avgdl / numDocs;
+    else
+        avgdl = 0.0;
 }
 
 
@@ -136,7 +146,7 @@ void Buscador::CalcularAvgdl() {
 double Buscador::wt_q (const InformacionTerminoPregunta& infTermPreg)
 {
     // k : número de términos (no de parada) de la query q
-    double k = GetInfPregunta().GetNumTotalPal();
+    double k = GetInfPregunta().GetNumTotalPalSinParada();
 
     if (k == 0) return 0;
 
@@ -165,10 +175,13 @@ double Buscador::wt_d (const InformacionTermino& infTerm, const InfDoc& infDoc)
     double ft_d = infTermDoc->GetFt();
 
     // l_d : longitud en palabras (no de parada) del documento
-    double ld = infDoc.GetNumPal();
+    double ld = infDoc.GetNumPalSinParada();
 
     // avr_l_d : media de palabras (no de parada) del tamaño de los documentos
-    double avr_ld = GetInformacionColeccionDocs().GetTamBytes() / GetInformacionColeccionDocs().GetNumTotalPal();
+    double avr_ld = 0.0;
+    if (GetInformacionColeccionDocs().GetNumDocs() > 0)
+        avr_ld = 1.0 * GetInformacionColeccionDocs().GetNumTotalPalSinParada() /
+                  GetInformacionColeccionDocs().GetNumDocs();
 
     // f*_t,d = f_t,d * log2(1 + ((c * avr_l_d) / l_d))
     double s0 = 1.0 + ((c * avr_ld) / ld);
@@ -254,7 +267,7 @@ double Buscador::score(const InfDoc& infDoc)
         if (fqi_D == 0.0) continue;
 
         // |D| : número de palabras del documento D
-        double D_abs = infDoc.GetNumPal();
+        double D_abs = infDoc.GetNumPalSinParada();
 
         // Sumar al resultado
         double d = (fqi_D + k1 * (1.0 - b + b * (D_abs / avgdl)));

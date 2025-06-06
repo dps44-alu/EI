@@ -108,8 +108,13 @@ string Buscador::generarResultados (const int& numDocumentos) const
         salida += fich + " ";
 
         ostringstream conv;
+        string runName;
+        if (docs.top().NumPregunta() == 0)
+            runName = GetPregunta();
+        else
+            runName = "ConjuntoDePreguntas";
         conv << i << " " << fixed << setprecision(6) << docs.top().VSimilitud()
-            << " " << GetPregunta();
+            << " " << runName;
 
         salida += conv.str();
         str += salida + '\n';

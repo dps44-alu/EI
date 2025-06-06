@@ -2,9 +2,8 @@
 
 int main (int argc, char* argv[]) 
 {
-    if (argc != 4) 
+    if (argc != 4)
     {
-        cerr << "Uso: " << argv[0] << " <DFR|BM25> <stemming|no> <fichero_salida>\n";
         return 1;
     }
 
